@@ -1,0 +1,11 @@
+customer_id,name,email,domain,plan,seats_used,region,health,arr_usd,renewal_date,crm_owner
+C-1001,Halcyon Logistics,ops@halcyonlogistics.com,halcyonlogistics.com,Growth,23,us-east,at_risk,5988,2026-11-02,maya.desai
+C-1002,Northwind Analytics,admin@northwindanalytics.io,northwindanalytics.io,Scale,88,us-west,healthy,17988,2027-01-15,omar.haddad
+C-1003,Verdant Retail Group,it@verdantretail.co.uk,verdantretail.co.uk,Starter,5,eu-west,healthy,588,2026-10-20,priya.nair
+C-1004,Ironclad Manufacturing,ops@ironcladmfg.com,ironcladmfg.com,Enterprise,412,us-east,critical,98000,2026-09-30,sam.okoro
+C-1005,Lumen Health Partners,security@lumenhealth.org,lumenhealth.org,Growth,26,us-west,at_risk,5988,2026-12-05,maya.desai
+C-1006,Kestrel Freight,help@kestrelfreight.net,kestrelfreight.net,Scale,74,ap-south,healthy,17988,2027-02-28,omar.haddad
+C-1007,Blue Harbor Media,studio@blueharbormedia.tv,blueharbormedia.tv,Starter,3,us-west,healthy,588,2026-09-18,priya.nair
+C-1008,Calder Institute,admin@calderinstitute.edu,calderinstitute.edu,Growth,19,us-east,healthy,4780,2026-11-21,sam.okoro
+C-1009,Sable Insurance,claims@sableinsurance.com,sableinsurance.com,Enterprise,220,eu-central,healthy,142000,2027-03-11,omar.haddad
+C-1010,Petrichor Foods,ops@petrichorfoods.com,petrichorfoods.com,Starter,4,ap-south,churned,588,2026-08-14,priya.nair

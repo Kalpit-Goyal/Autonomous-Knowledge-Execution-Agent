@@ -1,0 +1,13 @@
+ticket_id,customer_id,subject,priority,status,created_at,updated_at,open_minutes,category,sentiment
+T-5001,C-1004,"Production API returning 503 for all writes",P1,open,2026-09-20T08:12:00Z,2026-09-20T09:40:00Z,185,availability,angry
+T-5002,C-1001,"Dashboard slow since adding 12k records",P2,open,2026-09-19T14:05:00Z,2026-09-20T07:00:00Z,1445,performance,frustrated
+T-5003,C-1005,"Need SSO enforced before our security review on Oct 1",P3,open,2026-09-18T11:30:00Z,2026-09-19T16:20:00Z,2600,security,neutral
+T-5004,C-1007,"Duplicate leads after HubSpot sync",P3,awaiting_customer_response,2026-09-17T09:15:00Z,2026-09-18T10:00:00Z,1810,integrations,frustrated
+T-5005,C-1002,"Requesting refund for 2026-08 annual renewal",P3,open,2026-09-16T13:45:00Z,2026-09-17T08:20:00Z,3075,billing,neutral
+T-5006,C-1003,"Login loop after password reset",P2,open,2026-09-20T06:50:00Z,2026-09-20T10:05:00Z,195,authentication,angry
+T-5007,C-1006,"Webhook 410 since we changed domain",P3,open,2026-09-15T17:22:00Z,2026-09-16T12:00:00Z,3020,integrations,neutral
+T-5008,C-1008,"Add 60 seats for new campus rollout",P4,open,2026-09-19T09:00:00Z,2026-09-20T09:15:00Z,1695,entitlements,neutral
+T-5009,C-1009,"Suspected credential leak in shared workspace",P1,open,2026-09-20T11:02:00Z,2026-09-20T11:35:00Z,33,security,angry
+T-5010,C-1001,"Credit request after three SLA misses in August",P2,open,2026-09-19T16:40:00Z,2026-09-20T08:00:00Z,1760,billing,angry
+T-5011,C-1007,"Cancel at end of term, need data export first",P4,open,2026-09-14T10:10:00Z,2026-09-18T09:30:00Z,4420,offboarding,neutral
+T-5012,C-1010,"Trial extension for pilot evaluation",P4,resolved,2026-09-05T12:00:00Z,2026-09-06T09:00:00Z,1260,entitlements,neutral

@@ -1,0 +1,8 @@
+plan_name,billing_cycle,price_usd,seats_included,storage_gb,api_calls_per_month,support_tier,dedicated_success_manager,ssso,sla_response_hours
+Starter,monthly,49,5,25,100000,standard,false,false,48
+Starter,annual,470,5,25,100000,standard,false,false,48
+Growth,monthly,499,25,250,2000000,priority,false,false,12
+Growth,annual,4790,25,250,2000000,priority,false,false,12
+Scale,monthly,1499,100,1000,20000000,premium,true,true,4
+Scale,annual,14390,100,1000,20000000,premium,true,true,4
+Enterprise,custom,0,0,0,0,dedicated,true,true,1

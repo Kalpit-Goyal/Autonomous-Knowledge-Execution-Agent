@@ -1,0 +1,91 @@
+{
+  "version": "2026.09",
+  "owner": "Revenue Operations",
+  "last_reviewed": "2026-08-28",
+  "refunds": {
+    "standard_window_days": 30,
+    "annual_plan_window_days": 14,
+    "annual_plan_note": "Annual subscriptions are non-refundable after 14 days because the discount is amortised over the term. This overrides the standard 30-day window for any plan with billing_cycle = annual.",
+    "pro_rated_policy": "Monthly plans are refunded pro rata by unused whole days.",
+    "service_credit_policy": "Service credits are discretionary. Agents may not issue service credits without supervisor approval regardless of ticket value.",
+    "non_refundable_items": [
+      "professional_services",
+      "onboarding_packages",
+      "custom_integration_work",
+      "training_sessions_already_attended"
+    ],
+    "partial_refund_ceiling_usd": 250,
+    "partial_refund_ceiling_note": "Partial refunds up to and including this amount may be issued by a support agent without additional approval, provided the ticket is inside its refund window. Above this amount, billing supervisor approval is mandatory."
+  },
+  "sla": {
+    "tiers": {
+      "P1": {
+        "label": "Critical - service down or unusable",
+        "first_response_minutes": 15,
+        "resolution_hours": 4,
+        "escalation_after_minutes": 30,
+        "on_call": "platform-oncall"
+      },
+      "P2": {
+        "label": "Major - core feature degraded, no workaround",
+        "first_response_minutes": 60,
+        "resolution_hours": 8,
+        "escalation_after_minutes": 120,
+        "on_call": "platform-oncall"
+      },
+      "P3": {
+        "label": "Minor - partial degradation, workaround exists",
+        "first_response_minutes": 240,
+        "resolution_hours": 24,
+        "escalation_after_minutes": 480,
+        "on_call": "support-queue"
+      },
+      "P4": {
+        "label": "Low - cosmetic, question, feature request",
+        "first_response_minutes": 480,
+        "resolution_hours": 72,
+        "escalation_after_minutes": null,
+        "on_call": "support-queue"
+      }
+    },
+    "business_hours": "09:00-18:00 UTC, Monday to Friday",
+    "clock_stops": [
+      "awaiting_customer_response",
+      "awaiting_third_party_provider"
+    ],
+    "clock_stop_note": "SLA clocks pause while a ticket sits in one of the listed states. Tickets in awaiting_customer_response must not be counted as breached."
+  },
+  "escalation": {
+    "matrix": {
+      "P1": { "notify": ["platform-oncall", "eng-manager", "account-exec"], "page": true },
+      "P2": { "notify": ["platform-oncall", "account-exec"], "page": true },
+      "P3": { "notify": ["support-queue"], "page": false },
+      "P4": { "notify": [], "page": false }
+    },
+    "auto_escalate_if_open_hours_exceed_resolution": true,
+    "security_incident_channel": "security-incident",
+    "data_breach_rule": "Any suspected data breach must be escalated to the security-incident channel and P1 regardless of customer count."
+  },
+  "approvals": {
+    "requires_human_approval_actions": [
+      "apply_account_credit",
+      "cancel_subscription",
+      "issue_partial_refund"
+    ],
+    "auto_approve_below_usd": 25,
+    "approver_roles": ["billing-supervisor", "account-manager", "support-lead"],
+    "note": "The agent may auto-execute reversible, in-window actions. Anything that moves money or terminates a contract requires an explicit human decision, recorded with approver identity and reason."
+  },
+  "entitlements": {
+    "seat_grants_require_manager_approval_above": 50,
+    "trial_extension_limit_days": 14,
+    "trial_extension_note": "A trial may be extended at most once, by at most 14 days. Further extensions must be approved by the account manager."
+  },
+  "conflicts_on_purpose": {
+    "note": "This file intentionally disagrees with kb/billing-and-refunds.md and structured/catalog.csv on some values. The agent is expected to detect the disagreement from evidence, not to silently pick a side.",
+    "known_disagreements": [
+      "kb/billing-and-refunds.md says a 30-day refund window for all plans; refunds.annual_plan_window_days says 14 for annual plans",
+      "catalog.csv lists Growth at 499 USD/month; kb/billing-and-refunds.md says 450 USD/month"
+    ]
+  }
+}

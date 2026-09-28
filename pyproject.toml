@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autonomous-knowledge-execution-agent"
+version = "1.0.0"
+description = "Autonomous agent that retrieves from internal knowledge sources, reasons over what it finds, and executes the right action with human approval and a full audit trail."
+requires-python = ">=3.12,<3.13"
+readme = "README.md"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
+]
+markers = [
+    "live: tests that call the real Groq API (need GROQ_API_KEY; skipped otherwise)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = [".venv", "data", "__pycache__"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+# B008: FastAPI and pydantic both use calls in argument defaults by design.
+# UP042: `(str, Enum)` is kept over `StrEnum` so the enums serialise identically
+#        across interpreter versions; values are always read via `.value`.
+ignore = ["B008", "UP042"]
