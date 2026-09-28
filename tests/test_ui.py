@@ -13,6 +13,7 @@ with `TypeError: object of type 'int' has no len()`.
 from __future__ import annotations
 
 import importlib
+import json
 import socket
 import sys
 import threading
@@ -192,3 +193,149 @@ def test_reasoning_trace_renders_structured_step_data(live_api):
 
     # The trace must actually be shown, not silently skipped.
     assert any("Reasoning trace" in e.label for e in at.expander)
+
+
+def test_sidebar_lists_manageable_kb_documents(live_api):
+    """The manage-knowledge-base panel must name the documents on disk."""
+    at = _run_ui()
+    text = "\n".join(c.value for c in at.sidebar.caption)
+    assert "billing-and-refunds.md" in text, text
+    assert "passages" in text
+    # Management is a capability, so the affordance has to be reachable.
+    assert any("Add or remove documents" in e.label for e in at.sidebar.expander)
+
+
+def test_stream_chat_paints_tokens_progressively(monkeypatch):
+    """The deltas must be painted as they arrive, not rendered once at the end.
+
+    Driven directly rather than through `AppTest`, because AppTest executes the
+    script from its file path in a fresh module namespace, so patching a
+    function on the imported `app.ui.app` has no effect on the run.
+    """
+    import app.ui.app as ui
+
+    frames = [
+        {"event": "start", "session_id": "SESS-1"},
+        {"event": "node", "node": "intake"},
+        {"event": "token", "text": "Your "},
+        {"event": "token", "text": "plan renews "},
+        {"event": "token", "text": "in April."},
+        {
+            "event": "done",
+            "response": {"session_id": "SESS-1", "answer": "Your plan renews in April."},
+        },
+    ]
+    painted: list[str] = []
+    captions: list[str] = []
+
+    class FakeSink:
+        def markdown(self, value):
+            painted.append(value)
+
+        def caption(self, value):
+            captions.append(value)
+
+        def empty(self):
+            pass
+
+    class FakeResponse:
+        status_code = 200
+
+        def iter_lines(self):
+            for frame in frames:
+                yield f"event: {frame['event']}"
+                yield "data: " + json.dumps(frame)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    class FakeClient:
+        def stream(self, method, path, **kwargs):
+            assert method == "POST"
+            assert path == "/chat/stream"
+            assert kwargs["json"]["message"] == "when does it renew?"
+            return FakeResponse()
+
+    monkeypatch.setattr(ui, "client", lambda: FakeClient())
+
+    result = ui.stream_chat("when does it renew?", None, FakeSink(), FakeSink())
+
+    assert result["answer"] == "Your plan renews in April."
+    # Each token triggers a repaint, and the intermediate frames grow the text.
+    assert painted == ["Your", "Your plan renews", "Your plan renews in April."]
+    assert "Working: intake" in captions
+
+
+def test_stream_chat_surfaces_an_in_band_error(monkeypatch):
+    """An error frame must not be mistaken for a successful answer."""
+    import app.ui.app as ui
+
+    class FakeResponse:
+        status_code = 200
+
+        def iter_lines(self):
+            yield "data: " + json.dumps({"event": "error", "error": "rate limited"})
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    monkeypatch.setattr(
+        ui, "client", lambda: type("C", (), {"stream": lambda self, *a, **k: FakeResponse()})()
+    )
+    shown: list[str] = []
+    monkeypatch.setattr(ui.st, "error", lambda msg: shown.append(str(msg)))
+
+    class FakeSink:
+        def markdown(self, value):
+            pass
+
+        def caption(self, value):
+            pass
+
+        def empty(self):
+            pass
+
+    assert ui.stream_chat("hi", None, FakeSink(), FakeSink()) is None
+    assert any("rate limited" in m for m in shown), shown
+
+
+def test_stream_chat_reports_a_truncated_stream(monkeypatch):
+    """A stream that ends with no `done` must not render as a blank answer."""
+    import app.ui.app as ui
+
+    class FakeResponse:
+        status_code = 200
+
+        def iter_lines(self):
+            yield "data: " + json.dumps({"event": "token", "text": "partial"})
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    monkeypatch.setattr(
+        ui, "client", lambda: type("C", (), {"stream": lambda self, *a, **k: FakeResponse()})()
+    )
+    shown: list[str] = []
+    monkeypatch.setattr(ui.st, "error", lambda msg: shown.append(str(msg)))
+
+    class FakeSink:
+        def markdown(self, value):
+            pass
+
+        def caption(self, value):
+            pass
+
+        def empty(self):
+            pass
+
+    assert ui.stream_chat("hi", None, FakeSink(), FakeSink()) is None
+    assert any("before the agent sent a result" in m for m in shown), shown

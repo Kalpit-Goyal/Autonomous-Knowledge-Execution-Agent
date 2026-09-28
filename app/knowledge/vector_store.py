@@ -50,11 +50,25 @@ def reset_vector_store() -> None:
 
     The client binds to one ``persist_directory`` on construction, so a test that
     repoints ``DATA_DIR`` would otherwise keep reading the previous index.
+
+    chromadb also keeps a process-wide ``SharedSystemClient`` cache keyed by
+    those settings, holding a strong reference (and an open sqlite handle) to
+    every directory ever used. Without evicting it, a suite that gives each
+    test its own data directory exhausts the process file-handle limit with
+    ``OSError: [Errno 24] Too many open files``.
     """
     global _store, _indexed_fingerprint
     with _lock:
         _store = None
         _indexed_fingerprint = None
+    try:
+        from chromadb.api.shared_system_client import SharedSystemClient
+
+        SharedSystemClient.clear_system_cache()
+    except Exception:  # noqa: BLE001
+        # Not every chromadb build exposes this; a leaked handle is survivable,
+        # a failed import at teardown is not.
+        logger.debug("could not clear the chromadb system cache", exc_info=True)
 
 
 def _fingerprint(kb_dir: Path) -> str:
@@ -183,6 +197,75 @@ def search(
             )
         )
     return evidence
+
+
+def rebuild_kb(settings: Settings | None = None) -> dict[str, Any]:
+    """Drop the collection and index every markdown file from scratch.
+
+    Used after a user adds, removes or rewrites a document. Two reasons a
+    plain upsert is not enough:
+
+    * a rewrite changes the chunk ids, so the superseded chunks are never
+      overwritten - only abandoned - and keep answering retrieval; and
+    * HNSW does not reliably reach vectors added to an already-built index,
+      so a freshly added document can be absent from search results even
+      though ``get`` returns it.
+
+    The KB is a few dozen chunks, so rebuilding is cheap and buys exactness.
+    """
+    settings = settings or get_settings()
+    global _indexed_fingerprint
+    store = get_vector_store(settings)
+    _indexed_fingerprint = None
+
+    # Empty the collection through the live client handle rather than deleting
+    # the persist directory: on Windows the open handle keeps those files
+    # locked, so an rmtree fails silently and the old vectors survive.
+    try:
+        existing = store.get(include=[]).get("ids") or []
+    except Exception:  # noqa: BLE001
+        existing = []
+    if existing:
+        store.delete(ids=list(existing))
+
+    return index_kb(force=True, settings=settings)
+
+
+def chunk_counts_by_source(settings: Settings | None = None) -> dict[str, int]:
+    """Live chunk count per source name, read from the collection itself."""
+    settings = settings or get_settings()
+    store = get_vector_store(settings)
+    counts: dict[str, int] = {}
+    try:
+        payload = store.get(include=["metadatas"])
+        for meta in payload.get("metadatas") or []:
+            name = (meta or {}).get("source")
+            if name:
+                counts[name] = counts.get(name, 0) + 1
+    except Exception:  # noqa: BLE001
+        logger.warning("could not read chunk metadata for the KB collection", exc_info=True)
+        return {}
+    return counts
+
+
+def purge_source(name: str, settings: Settings | None = None) -> int:
+    """Delete every chunk belonging to ``name`` and return how many went.
+
+    ``index_kb`` is an upsert keyed on stable chunk ids, so deleting a markdown
+    file on its own would leave its vectors behind and keep answering retrieval.
+    """
+    settings = settings or get_settings()
+    store = get_vector_store(settings)
+    try:
+        payload = store.get(where={"source": name}, include=[])
+        ids = list(payload.get("ids") or [])
+    except Exception:  # noqa: BLE001
+        logger.warning("could not look up chunks for %s", name, exc_info=True)
+        return 0
+    if not ids:
+        return 0
+    store.delete(ids=ids)
+    return len(ids)
 
 
 def collection_stats(settings: Settings | None = None) -> dict[str, Any]:

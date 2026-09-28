@@ -15,6 +15,7 @@ inspectability:
 from __future__ import annotations
 
 import contextlib
+import json
 import os
 from typing import Any
 
@@ -59,6 +60,69 @@ def api(method: str, path: str, **kwargs) -> Any:
         st.error(f"{method} {path} failed ({response.status_code}): {detail}")
         return None
     return response.json()
+
+
+def stream_chat(
+    message: str,
+    session_id: str | None,
+    placeholder: Any,
+    progress: Any,
+) -> dict[str, Any] | None:
+    """Stream one turn, painting answer deltas into `placeholder` as they arrive.
+
+    Returns the finished ChatResponse, or None if the stream failed. The server
+    sends the same response object on `done` that `/chat` would have returned, so
+    the caller can render normally afterwards.
+    """
+    payload = {"message": message, "session_id": session_id or None}
+    buffer: list[str] = []
+    final: dict[str, Any] | None = None
+
+    try:
+        with client().stream("POST", "/chat/stream", json=payload, timeout=TIMEOUT) as response:
+            if response.status_code >= 400:
+                response.read()
+                with contextlib.suppress(ValueError):
+                    detail = response.json().get("detail", response.text)
+                st.error(f"POST /chat/stream failed ({response.status_code}): {detail}")
+                return None
+
+            for line in response.iter_lines():
+                if not line or not line.startswith("data:"):
+                    continue
+                try:
+                    event = json.loads(line[5:].strip())
+                except ValueError:
+                    continue
+                kind = event.get("event")
+
+                if kind == "token":
+                    buffer.append(event.get("text", ""))
+                    # Re-rendering the whole buffer each time is what makes the
+                    # answer appear to type itself out.
+                    placeholder.markdown("".join(buffer).strip() or "…")
+                elif kind == "node":
+                    progress.caption(f"Working: {event.get('node')}")
+                elif kind == "start":
+                    progress.caption("Working…")
+                elif kind == "done":
+                    final = event.get("response")
+                elif kind == "error":
+                    st.error(f"The agent failed: {event.get('error', 'unknown error')}")
+                    return None
+    except httpx.HTTPError as exc:
+        st.error(
+            f"Could not reach the agent API at {API_BASE}.\n\n"
+            f"Start it with `python -m uvicorn app.api.main:app --port 8000`.\n\n"
+            f"Details: {exc}"
+        )
+        return None
+
+    progress.empty()
+    if final is None:
+        st.error("The stream ended before the agent sent a result.")
+        return None
+    return final
 
 
 # --------------------------------------------------------------------------- #
@@ -116,6 +180,57 @@ with st.sidebar:
         # Otherwise the heading sits above nothing and looks like a bug rather
         # than an unreachable API.
         st.caption(f"Could not reach the agent API at {API_BASE}.")
+
+    st.divider()
+    st.markdown("### Manage knowledge base")
+    with st.expander("Add or remove documents", expanded=False):
+        st.caption(
+            "Documents here are markdown files the agent can retrieve. "
+            "The operations DB, policy and catalog are fixed and not editable here."
+        )
+        listing = api("GET", "/sources/documents")
+        if listing:
+            for doc in listing.get("documents", []):
+                label = f"`{doc['name']}` — {doc['chunks']} passages, {doc['bytes'] // 1024} KB"
+                # Delete is per-row, so each button needs its own stable key.
+                if st.button(f"Remove {doc['name']}", key=f"rm_{doc['name']}"):
+                    result = api("DELETE", f"/sources/documents/{doc['name']}")
+                    if result is not None:
+                        st.success(
+                            f"Removed `{result['name']}` "
+                            f"({result.get('removed_chunks', 0)} passages purged)."
+                        )
+                        st.rerun()
+                st.caption(label)
+            if not listing.get("documents"):
+                st.caption("No documents yet.")
+
+        uploaded = st.file_uploader("Upload a .md file", type=["md"], key="kb_upload")
+        pasted_name = st.text_input("Name", value="", placeholder="my-doc.md", key="kb_name")
+        pasted_body = st.text_area("Markdown", value="", height=140, key="kb_body")
+        if st.button("Add document", key="kb_add"):
+            chosen = uploaded if uploaded is not None else None
+            name = pasted_name.strip() or (chosen.name if chosen is not None else "")
+            if chosen is not None:
+                body = chosen.getvalue().decode("utf-8", errors="replace")
+            else:
+                body = pasted_body
+            if not name:
+                st.error("Give the document a name, or upload a file.")
+            elif not body.strip():
+                st.error("The document is empty.")
+            else:
+                result = api(
+                    "POST",
+                    "/sources/documents",
+                    json={"name": name, "content": body, "overwrite": True},
+                )
+                if result is not None:
+                    st.success(
+                        f"Saved `{result['name']}` "
+                        f"({result.get('indexed_chunks')} passages)."
+                    )
+                    st.rerun()
 
     st.divider()
     st.markdown("### Awaiting approval")
@@ -363,12 +478,19 @@ if example:
     with st.chat_message("user"):
         st.markdown(example)
 
-    with st.chat_message("assistant"), st.spinner("Working…"):
-        response = api(
-            "POST",
-            "/chat",
-            json={"message": example, "session_id": st.session_state.session_id or None},
+    with st.chat_message("assistant"):
+        # The placeholder is painted in place while tokens arrive, so the answer
+        # grows word by word instead of appearing after a blocking wait.
+        streamed = st.empty()
+        progress = st.empty()
+        response = stream_chat(
+            example,
+            st.session_state.session_id or None,
+            streamed,
+            progress,
         )
+        streamed.empty()
+
     if response:
         st.session_state.session_id = response.get("session_id", "")
         st.session_state.last_response = response

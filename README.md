@@ -237,7 +237,11 @@ disagreement and apply the higher-authority source, not to average them.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `POST` | `/chat` | run a turn; may return `awaiting_approval` |
+| `POST` | `/chat/stream` | same turn as server-sent events (see below) |
 | `POST` | `/chat/{session_id}/approve` | approve or reject, resumes the graph |
+| `GET` | `/sources/documents` | markdown documents you can manage, with chunk counts |
+| `POST` | `/sources/documents` | add or replace a document; reindexes |
+| `DELETE` | `/sources/documents/{name}` | remove a document and purge its vectors |
 | `GET` | `/approvals/pending` | outstanding requests across sessions |
 | `GET` | `/approvals/recent` | decided requests |
 | `GET` | `/audit` | audit rows, filterable by `session_id`/`event_type` |
@@ -246,6 +250,48 @@ disagreement and apply the higher-authority source, not to average them.
 | `GET` | `/actions` | the action catalogue with schemas and risk |
 | `GET` | `/health` | liveness and whether a model is configured |
 | `GET` | `/session/{session_id}/new` | clear a session's history |
+
+### Streaming
+
+`POST /chat/stream` runs the identical graph and returns `text/event-stream`. The
+UI uses it so answers appear word by word; each frame is one `data:` line:
+
+| Event | Payload | Meaning |
+| --- | --- | --- |
+| `start` | `session_id` | the turn has begun |
+| `node` | `node` | a reasoning stage finished (intake, retrieve, …) |
+| `token` | `text` | one answer delta |
+| `done` | `response` | a full `ChatResponse`, identical to `/chat` |
+| `error` | `error` | terminal failure; the status was already sent |
+
+An approval pause arrives as a normal `done` with `status: awaiting_approval`, so a
+client only needs the `token` and `done` branches. The response object is the same one
+`/chat` returns, so a client can fall back to the blocking endpoint and get identical
+results.
+
+### Managing the knowledge base
+
+The operations DB, policy file and catalog are fixed and have no write path. Only the
+markdown articles in `data/knowledge/kb` are user-managed, through the UI sidebar
+("Add or remove documents") or the API:
+
+```bash
+curl -X POST http://127.0.0.1:8000/sources/documents \
+  -H "Content-Type: application/json" \
+  -d '{"name": "escalation.md", "content": "# Escalation\n\nTier 2 owns Sev-1.", "overwrite": true}'
+
+curl -X DELETE http://127.0.0.1:8000/sources/documents/escalation.md
+```
+
+Two behaviours worth knowing:
+
+- **A mutation rebuilds the collection** rather than upserting. Chunk ids are derived
+  from content, so a rewrite can never retire the ids its previous version used, and
+  HNSW does not reliably reach vectors added to an already-built index. The knowledge
+  base is a few dozen chunks, so a rebuild is cheap and buys exactness.
+- **Names are validated, not sanitised.** Separators, dot segments, hidden names and
+  Windows device names are rejected with `400`, and the resolved path is confirmed to
+  sit directly inside the knowledge base directory.
 
 ```bash
 curl -X POST http://127.0.0.1:8000/chat \
@@ -262,7 +308,7 @@ curl -X POST http://127.0.0.1:8000/chat/<session_id>/approve \
 ## Tests
 
 ```bash
-python -m pytest              # 126 offline tests
+python -m pytest              # 165 offline tests
 python -m ruff check .
 ```
 
@@ -273,11 +319,24 @@ thresholds, the full approval round trip, the state/response contracts, the Groq
 (temperature clamping, method fallback, token accounting, rate-limit fast-fail) and the HTTP
 surface.
 
+`tests/test_streaming.py` and `tests/test_api_stream_sources.py` cover the streamed and
+document-management surfaces. Two of their assertions are worth calling out, because both
+encode a bug that a weaker test would have passed:
+
+- The concatenated `token` frames must equal the answer on the `done` frame, and must
+  equal what the blocking `/chat` returns. The streamed responder joins deltas verbatim, so
+  this is what forces the trailing-whitespace normalisation in the responder node.
+- A removed or rewritten document must be *absent* from the collection, not merely
+  outranked. `index_kb` is an upsert keyed on content-derived chunk ids, so a rewrite cannot
+  retire its predecessor's ids on its own; `tests/test_api_stream_sources.py` checks the
+  superseded text is gone from the indexed chunks directly.
+
 `tests/test_ui.py` goes one step further and executes the Streamlit script through
 `streamlit.testing.v1.AppTest` against a real API on a real port. This matters because
 `streamlit run` answers HTTP 200 even when the script raises, so a health check cannot see a crash
 on first paint — the sidebar once died on `TypeError: object of type 'int' has no len()` while the
-server looked perfectly healthy.
+server looked perfectly healthy. The same file pins a second crash of the same shape, a nested
+`st.expander` raising `StreamlitAPIException` on every completed answer.
 
 Ten further tests in `tests/test_live_groq.py` exercise the real model — structured output,
 conflict reporting, and that an irreversible action really does halt for approval. They skip

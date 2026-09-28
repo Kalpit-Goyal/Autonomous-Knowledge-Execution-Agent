@@ -291,3 +291,32 @@ class SessionSummary(BaseModel):
     turns: int
     summary: str = ""
     pending_approvals: int = 0
+
+class SourceCreate(BaseModel):
+    """A markdown document to add to the knowledge base."""
+
+    name: str = Field(description="Filename; '.md' is appended when missing.")
+    content: str = Field(description="Markdown body. Must not be empty.")
+    overwrite: bool = False
+
+
+class SourceSummary(BaseModel):
+    name: str
+    bytes: int
+    modified: str
+    chunks: int = 0
+
+
+class SourceList(BaseModel):
+    documents: list[SourceSummary] = Field(default_factory=list)
+    count: int = 0
+    directory: str = ""
+
+
+class SourceMutation(BaseModel):
+    name: str
+    created: bool | None = None
+    bytes: int | None = None
+    removed_chunks: int | None = None
+    indexed_chunks: int = 0
+    sources: list[str] = Field(default_factory=list)

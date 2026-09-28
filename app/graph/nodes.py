@@ -1191,7 +1191,10 @@ def _generate_answer(llm, *, system: str, human: str) -> tuple[str, int, int]:
         except Exception as exc:  # noqa: BLE001
             # A broken sink must not lose the answer.
             logger.warning("stream writer failed (%s); continuing", exc)
-    return "".join(parts), usage.get("in", 0), usage.get("out", 0)
+    # Deltas are joined verbatim, so a provider that splits on whitespace leaves
+    # a trailing space the non-streaming path would not have. Strip it so the
+    # two paths return byte-identical answers.
+    return "".join(parts).strip(), usage.get("in", 0), usage.get("out", 0)
 
 
 def respond(state: AgentState, *, llm, memory) -> dict[str, Any]:

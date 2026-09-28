@@ -7,25 +7,36 @@ diagnostics that make the agent's behaviour inspectable without reading logs.
 
 from __future__ import annotations
 
+import json
 import logging
 from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import Field
 
 from app import approval_store
 from app.audit import query as audit_query
 from app.audit import stats as audit_stats
 from app.config import get_settings
-from app.graph.runner import new_session_id, resume, run
+from app.graph.runner import new_session_id, resume, run, stream_run
 from app.knowledge import sql_store
 from app.knowledge.catalog_store import catalog_summary
 from app.knowledge.policy_store import policy_summary
+from app.knowledge.sources import SourceError, list_documents, remove_document
+from app.knowledge.sources import add_document as add_kb_document
 from app.knowledge.vector_store import collection_stats, ensure_indexed
 from app.llm import LLMUnavailable
-from app.schemas import ApproveRequest, ChatRequest, ChatResponse
+from app.schemas import (
+    ApproveRequest,
+    ChatRequest,
+    ChatResponse,
+    SourceCreate,
+    SourceList,
+    SourceMutation,
+)
 from app.tools import ACTIONS, needs_approval, registry_as_prompt_block
 
 logger = logging.getLogger(__name__)
@@ -94,10 +105,7 @@ def health() -> dict[str, Any]:
     }
 
 
-@app.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest) -> ChatResponse:
-    if not request.message.strip():
-        raise HTTPException(status_code=422, detail="message must not be empty")
+def _require_llm() -> None:
     if not settings.has_llm_key:
         raise HTTPException(
             status_code=503,
@@ -106,6 +114,92 @@ def chat(request: ChatRequest) -> ChatResponse:
                 "and restart the API."
             ),
         )
+
+
+def _require_message(request: ChatRequest) -> None:
+    if not request.message.strip():
+        raise HTTPException(status_code=422, detail="message must not be empty")
+
+
+def _sse(event: dict[str, Any]) -> str:
+    """Frame one event for text/event-stream.
+
+    A JSON payload is embedded as a `data:` line, so the whole frame is a
+    single line and no payload can split the stream.
+    """
+    return f"event: {event['event']}\ndata: {json.dumps(event)}\n\n"
+
+
+@app.post("/chat/stream")
+def chat_stream(request: ChatRequest) -> StreamingResponse:
+    """Stream one turn as server-sent events.
+
+    Events are `start`, `node` (reasoning progress), `token` (answer deltas)
+    and exactly one terminal `done` or `error`. The `done` payload is the same
+    ChatResponse the blocking `/chat` returns, so a client can fall back to
+    that endpoint and get identical results.
+    """
+    _require_message(request)
+    _require_llm()
+
+    def _generate() -> Any:
+        try:
+            for event in stream_run(request, settings=settings):
+                yield _sse(event)
+        except LLMUnavailable as exc:
+            # The status has already been sent, so the failure has to arrive as
+            # an in-band error event rather than an HTTP status code.
+            yield _sse({"event": "error", "error": str(exc)})
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("streamed run failed")
+            yield _sse({"event": "error", "error": f"{type(exc).__name__}: {exc}"})
+
+    return StreamingResponse(
+        _generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            # Stops nginx and similar proxies from buffering the stream into a
+            # single chunk, which would defeat the point of streaming.
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@app.get("/sources/documents", response_model=SourceList)
+def source_documents() -> dict[str, Any]:
+    """Markdown documents a user may manage, with live chunk counts."""
+    return list_documents(settings=settings)
+
+
+@app.post("/sources/documents", response_model=SourceMutation, status_code=201)
+def create_source_document(payload: SourceCreate) -> dict[str, Any]:
+    try:
+        return add_kb_document(
+            payload.name,
+            payload.content,
+            overwrite=payload.overwrite,
+            settings=settings,
+        )
+    except SourceError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.delete("/sources/documents/{name}", response_model=SourceMutation)
+def delete_source_document(name: str) -> dict[str, Any]:
+    try:
+        return remove_document(name, settings=settings)
+    except SourceError as exc:
+        # An unknown document is a 404, not a 400: the request was well formed.
+        status = 404 if "not in the knowledge base" in str(exc) else 400
+        raise HTTPException(status_code=status, detail=str(exc)) from exc
+
+
+@app.post("/chat", response_model=ChatResponse)
+def chat(request: ChatRequest) -> ChatResponse:
+    _require_message(request)
+    _require_llm()
     try:
         return run(request, settings=settings)
     except LLMUnavailable as exc:
