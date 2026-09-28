@@ -1,0 +1,365 @@
+{
+  "scenarios": 6,
+  "passed": 6,
+  "pass_rate": 1.0,
+  "traces": [
+    {
+      "id": "tr-01",
+      "name": "Refund eligibility, policy vs KB conflict",
+      "message": "C-1001 wants a refund for an annual plan bought 20 days ago.",
+      "label": {
+        "intent": "refund_request",
+        "reads_kb": true,
+        "reads_policy": true,
+        "expected_conflict": true,
+        "must_cite_policy": true,
+        "requires_approval": true,
+        "writes_allowed": true
+      },
+      "observed": {
+        "status": "awaiting_approval",
+        "awaiting_approval": true,
+        "answer": "I have stopped short of changing anything. These actions need a human decision:\n\n- apply_account_credit: 'apply_account_credit' is marked irreversible in the action registry, so a human must authorise it before it runs.\n  why: Policy allows a goodwill credit for this outage.\n\nApprove or reject them in the approval panel and I will continue from here.",
+        "citations": 10,
+        "citation_source_types": [
+          "SourceType.KB",
+          "SourceType.POLICY"
+        ],
+        "citation_sources": [
+          "billing-and-refunds.md",
+          "data-export-and-offboarding.md",
+          "policies.json"
+        ],
+        "n_actions": 0,
+        "action_names": [],
+        "n_decisions": 1,
+        "decision_names": [
+          "apply_account_credit"
+        ],
+        "n_approvals": 1,
+        "n_conflicts": 1,
+        "iterations": 0,
+        "elapsed_ms": 85,
+        "trace_steps": 6,
+        "nodes_visited": [
+          "intake",
+          "plan",
+          "retrieve",
+          "reconcile",
+          "decide",
+          "gate_for_approval"
+        ],
+        "reads_kb": true,
+        "reads_policy": true,
+        "error": null
+      },
+      "checks": {
+        "no_error": true,
+        "kb_touched": true,
+        "policy_touched": true,
+        "approval_gate": true,
+        "write_shape": true,
+        "cited": true
+      },
+      "passed": true
+    },
+    {
+      "id": "tr-02",
+      "name": "Goodwill credit inside authorised limit",
+      "message": "C-1002 had an outage. Please give them a service credit as goodwill.",
+      "label": {
+        "intent": "credit_request",
+        "reads_kb": true,
+        "reads_policy": true,
+        "expected_conflict": false,
+        "must_cite_policy": true,
+        "requires_approval": true,
+        "writes_allowed": true
+      },
+      "observed": {
+        "status": "awaiting_approval",
+        "awaiting_approval": true,
+        "answer": "I have stopped short of changing anything. These actions need a human decision:\n\n- apply_account_credit: 'apply_account_credit' is marked irreversible in the action registry, so a human must authorise it before it runs.\n  why: Policy allows a goodwill credit for this outage.\n\nApprove or reject them in the approval panel and I will continue from here.",
+        "citations": 10,
+        "citation_source_types": [
+          "SourceType.KB",
+          "SourceType.POLICY"
+        ],
+        "citation_sources": [
+          "billing-and-refunds.md",
+          "data-export-and-offboarding.md",
+          "policies.json"
+        ],
+        "n_actions": 0,
+        "action_names": [],
+        "n_decisions": 1,
+        "decision_names": [
+          "apply_account_credit"
+        ],
+        "n_approvals": 1,
+        "n_conflicts": 1,
+        "iterations": 0,
+        "elapsed_ms": 84,
+        "trace_steps": 6,
+        "nodes_visited": [
+          "intake",
+          "plan",
+          "retrieve",
+          "reconcile",
+          "decide",
+          "gate_for_approval"
+        ],
+        "reads_kb": true,
+        "reads_policy": true,
+        "error": null
+      },
+      "checks": {
+        "no_error": true,
+        "kb_touched": true,
+        "policy_touched": true,
+        "approval_gate": true,
+        "write_shape": true,
+        "cited": true
+      },
+      "passed": true
+    },
+    {
+      "id": "tr-03",
+      "name": "Outage triage, no state change",
+      "message": "Our dashboard has been unusable since 09:00. What is happening?",
+      "label": {
+        "intent": "incident",
+        "reads_kb": true,
+        "reads_policy": true,
+        "expected_conflict": false,
+        "must_cite_policy": false,
+        "requires_approval": false,
+        "writes_allowed": false
+      },
+      "observed": {
+        "status": "completed",
+        "awaiting_approval": false,
+        "answer": "Answer grounded in the cited evidence.",
+        "citations": 7,
+        "citation_source_types": [
+          "SourceType.KB",
+          "SourceType.POLICY"
+        ],
+        "citation_sources": [
+          "data-export-and-offboarding.md",
+          "policies.json",
+          "troubleshooting-playbook.md"
+        ],
+        "n_actions": 0,
+        "action_names": [],
+        "n_decisions": 0,
+        "decision_names": [],
+        "n_approvals": 0,
+        "n_conflicts": 1,
+        "iterations": 1,
+        "elapsed_ms": 120,
+        "trace_steps": 8,
+        "nodes_visited": [
+          "intake",
+          "plan",
+          "retrieve",
+          "reconcile",
+          "decide",
+          "execute",
+          "verify",
+          "respond"
+        ],
+        "reads_kb": true,
+        "reads_policy": true,
+        "error": null
+      },
+      "checks": {
+        "no_error": true,
+        "kb_touched": true,
+        "policy_touched": true,
+        "approval_gate": true,
+        "write_shape": true,
+        "cited": true
+      },
+      "passed": true
+    },
+    {
+      "id": "tr-04",
+      "name": "Billing question answered from KB alone",
+      "message": "How do I add extra seats to my plan?",
+      "label": {
+        "intent": "howto",
+        "reads_kb": true,
+        "reads_policy": false,
+        "expected_conflict": false,
+        "must_cite_policy": false,
+        "requires_approval": false,
+        "writes_allowed": false
+      },
+      "observed": {
+        "status": "completed",
+        "awaiting_approval": false,
+        "answer": "Answer grounded in the cited evidence.",
+        "citations": 5,
+        "citation_source_types": [
+          "SourceType.KB"
+        ],
+        "citation_sources": [
+          "billing-and-refunds.md",
+          "plans-and-entitlements.md"
+        ],
+        "n_actions": 0,
+        "action_names": [],
+        "n_decisions": 0,
+        "decision_names": [],
+        "n_approvals": 0,
+        "n_conflicts": 1,
+        "iterations": 1,
+        "elapsed_ms": 84,
+        "trace_steps": 8,
+        "nodes_visited": [
+          "intake",
+          "plan",
+          "retrieve",
+          "reconcile",
+          "decide",
+          "execute",
+          "verify",
+          "respond"
+        ],
+        "reads_kb": true,
+        "reads_policy": false,
+        "error": null
+      },
+      "checks": {
+        "no_error": true,
+        "kb_touched": true,
+        "policy_touched": true,
+        "approval_gate": true,
+        "write_shape": true,
+        "cited": true
+      },
+      "passed": true
+    },
+    {
+      "id": "tr-05",
+      "name": "Offboarding with irreversible delete",
+      "message": "Cancel C-1003's account and delete all of their data.",
+      "label": {
+        "intent": "offboarding",
+        "reads_kb": true,
+        "reads_policy": true,
+        "expected_conflict": true,
+        "must_cite_policy": true,
+        "requires_approval": true,
+        "writes_allowed": true
+      },
+      "observed": {
+        "status": "awaiting_approval",
+        "awaiting_approval": true,
+        "answer": "I have stopped short of changing anything. These actions need a human decision:\n\n- apply_account_credit: 'apply_account_credit' is marked irreversible in the action registry, so a human must authorise it before it runs.\n  why: Policy allows a goodwill credit for this outage.\n\nApprove or reject them in the approval panel and I will continue from here.",
+        "citations": 10,
+        "citation_source_types": [
+          "SourceType.KB",
+          "SourceType.POLICY"
+        ],
+        "citation_sources": [
+          "billing-and-refunds.md",
+          "data-export-and-offboarding.md",
+          "policies.json"
+        ],
+        "n_actions": 0,
+        "action_names": [],
+        "n_decisions": 1,
+        "decision_names": [
+          "apply_account_credit"
+        ],
+        "n_approvals": 1,
+        "n_conflicts": 1,
+        "iterations": 0,
+        "elapsed_ms": 78,
+        "trace_steps": 6,
+        "nodes_visited": [
+          "intake",
+          "plan",
+          "retrieve",
+          "reconcile",
+          "decide",
+          "gate_for_approval"
+        ],
+        "reads_kb": true,
+        "reads_policy": true,
+        "error": null
+      },
+      "checks": {
+        "no_error": true,
+        "kb_touched": true,
+        "policy_touched": true,
+        "approval_gate": true,
+        "write_shape": true,
+        "cited": true
+      },
+      "passed": true
+    },
+    {
+      "id": "tr-06",
+      "name": "SLA breach check against ops DB",
+      "message": "Has T-5001 breached its response commitment?",
+      "label": {
+        "intent": "sla_review",
+        "reads_kb": true,
+        "reads_policy": true,
+        "expected_conflict": false,
+        "must_cite_policy": true,
+        "requires_approval": false,
+        "writes_allowed": false
+      },
+      "observed": {
+        "status": "completed",
+        "awaiting_approval": false,
+        "answer": "Answer grounded in the cited evidence.",
+        "citations": 10,
+        "citation_source_types": [
+          "SourceType.KB",
+          "SourceType.POLICY"
+        ],
+        "citation_sources": [
+          "billing-and-refunds.md",
+          "data-export-and-offboarding.md",
+          "policies.json"
+        ],
+        "n_actions": 0,
+        "action_names": [],
+        "n_decisions": 0,
+        "decision_names": [],
+        "n_approvals": 0,
+        "n_conflicts": 1,
+        "iterations": 1,
+        "elapsed_ms": 132,
+        "trace_steps": 8,
+        "nodes_visited": [
+          "intake",
+          "plan",
+          "retrieve",
+          "reconcile",
+          "decide",
+          "execute",
+          "verify",
+          "respond"
+        ],
+        "reads_kb": true,
+        "reads_policy": true,
+        "error": null
+      },
+      "checks": {
+        "no_error": true,
+        "kb_touched": true,
+        "policy_touched": true,
+        "approval_gate": true,
+        "write_shape": true,
+        "cited": true
+      },
+      "passed": true
+    }
+  ]
+}

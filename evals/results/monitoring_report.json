@@ -1,0 +1,86 @@
+{
+  "generated_at": "2026-09-28T16:16:25+0530",
+  "workload": "labeled scenario corpus, scripted LLM. Not production traffic.",
+  "snapshot": {
+    "total": 298,
+    "failures": 0,
+    "by_event_type": {
+      "reconcile": 61,
+      "retrieve": 59,
+      "plan": 51,
+      "decide": 43,
+      "verify": 36,
+      "intake": 30,
+      "respond": 12,
+      "approval_requested": 6
+    }
+  },
+  "audit": {
+    "total_events": 298,
+    "distinct_sessions": 29,
+    "by_event_type": {
+      "reconcile": 61,
+      "retrieve": 59,
+      "plan": 51,
+      "decide": 43,
+      "verify": 36,
+      "intake": 30,
+      "respond": 12,
+      "approval_requested": 6
+    },
+    "by_node": {
+      "reconcile": 61,
+      "retrieve": 59,
+      "plan": 51,
+      "decide": 43,
+      "verify": 36,
+      "intake": 30,
+      "respond": 12,
+      "gate_for_approval": 6
+    },
+    "by_action": {},
+    "by_actor": {
+      "agent": 298
+    }
+  },
+  "latency_ms": {
+    "n": 298,
+    "mean": 0.0,
+    "p50": 0.0,
+    "p95": 0.0,
+    "max": 0.0
+  },
+  "tokens": {
+    "in": 0,
+    "out": 0,
+    "n_with_usage": 298
+  },
+  "errors": [],
+  "checks": [
+    {
+      "check": "no_failed_events",
+      "status": "pass",
+      "detail": "0 event(s) recorded ok=0"
+    },
+    {
+      "check": "actions_are_attributed",
+      "status": "pass",
+      "detail": "every action and approval row names an actor"
+    },
+    {
+      "check": "writes_follow_approval",
+      "status": "pass",
+      "detail": "0 action_start row(s) against 6 approval_requested and 0 auto-approved; none executed ungated"
+    },
+    {
+      "check": "sessions_identified",
+      "status": "pass",
+      "detail": "29 distinct session id(s) in the trail"
+    },
+    {
+      "check": "node_latency_sane",
+      "status": "pass",
+      "detail": "p95 node duration 0ms across 298 samples"
+    }
+  ]
+}

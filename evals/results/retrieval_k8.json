@@ -1,0 +1,599 @@
+{
+  "backend": "auto",
+  "top_k": 8,
+  "indexed_documents": 33,
+  "overall": {
+    "n": 22,
+    "precision_at_k": 0.40151515151515155,
+    "recall_at_k": 1.0,
+    "mrr": 0.9772727272727273,
+    "ndcg": 0.9772727272727273,
+    "pass_rate": 1.0
+  },
+  "seeded_conflict_cases": {
+    "n": 2,
+    "precision_at_k": 0.6666666666666666,
+    "recall_at_k": 1.0,
+    "mrr": 1.0,
+    "ndcg": 1.0,
+    "pass_rate": 1.0
+  },
+  "ordinary_cases": {
+    "n": 20,
+    "precision_at_k": 0.375,
+    "recall_at_k": 1.0,
+    "mrr": 0.975,
+    "ndcg": 0.975,
+    "pass_rate": 1.0
+  },
+  "by_intent": {
+    "authorisation": {
+      "n": 1,
+      "precision_at_k": 0.3333333333333333,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg": 1.0,
+      "pass_rate": 1.0
+    },
+    "definition": {
+      "n": 2,
+      "precision_at_k": 0.5,
+      "recall_at_k": 1.0,
+      "mrr": 0.75,
+      "ndcg": 0.75,
+      "pass_rate": 1.0
+    },
+    "entitlement": {
+      "n": 4,
+      "precision_at_k": 0.3125,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg": 1.0,
+      "pass_rate": 1.0
+    },
+    "handoff": {
+      "n": 1,
+      "precision_at_k": 1.0,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg": 1.0,
+      "pass_rate": 1.0
+    },
+    "offboarding": {
+      "n": 1,
+      "precision_at_k": 0.25,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg": 1.0,
+      "pass_rate": 1.0
+    },
+    "policy_lookup": {
+      "n": 3,
+      "precision_at_k": 0.4444444444444444,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg": 1.0,
+      "pass_rate": 1.0
+    },
+    "retention": {
+      "n": 1,
+      "precision_at_k": 0.25,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg": 1.0,
+      "pass_rate": 1.0
+    },
+    "seeded_conflict": {
+      "n": 2,
+      "precision_at_k": 0.6666666666666666,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg": 1.0,
+      "pass_rate": 1.0
+    },
+    "sla": {
+      "n": 3,
+      "precision_at_k": 0.27777777777777773,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg": 1.0,
+      "pass_rate": 1.0
+    },
+    "troubleshooting": {
+      "n": 4,
+      "precision_at_k": 0.3125,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg": 1.0,
+      "pass_rate": 1.0
+    }
+  },
+  "cases": [
+    {
+      "qid": "kb-01",
+      "question": "How long do I have to request a refund on a monthly plan?",
+      "intent": "policy_lookup",
+      "expect_conflict": false,
+      "gold_sources": [
+        "billing-and-refunds.md"
+      ],
+      "retrieved": [
+        "billing-and-refunds.md",
+        "account-credits-and-goodwill.md",
+        "plans-and-entitlements.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.3333,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-02",
+      "question": "What is the refund window for an annual subscription?",
+      "intent": "seeded_conflict",
+      "expect_conflict": true,
+      "gold_sources": [
+        "billing-and-refunds.md"
+      ],
+      "retrieved": [
+        "billing-and-refunds.md",
+        "account-credits-and-goodwill.md",
+        "data-export-and-offboarding.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.3333,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": "KB says 30 days; policies.json says 14 for annual. The KB value is the wrong one and must be overridden."
+    },
+    {
+      "qid": "kb-03",
+      "question": "How much does the Growth plan cost per month?",
+      "intent": "seeded_conflict",
+      "expect_conflict": true,
+      "gold_sources": [
+        "billing-and-refunds.md",
+        "plans-and-entitlements.md"
+      ],
+      "retrieved": [
+        "billing-and-refunds.md",
+        "plans-and-entitlements.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 1.0,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": "KB pricing table says 450; catalog.csv says 499, which governs."
+    },
+    {
+      "qid": "kb-04",
+      "question": "Who is allowed to authorise an account credit?",
+      "intent": "authorisation",
+      "expect_conflict": false,
+      "gold_sources": [
+        "account-credits-and-goodwill.md"
+      ],
+      "retrieved": [
+        "account-credits-and-goodwill.md",
+        "billing-and-refunds.md",
+        "data-export-and-offboarding.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.3333,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-05",
+      "question": "What is the difference between a goodwill credit and a refund?",
+      "intent": "definition",
+      "expect_conflict": false,
+      "gold_sources": [
+        "account-credits-and-goodwill.md"
+      ],
+      "retrieved": [
+        "account-credits-and-goodwill.md",
+        "billing-and-refunds.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.5,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-06",
+      "question": "What happens to my data when I cancel?",
+      "intent": "offboarding",
+      "expect_conflict": false,
+      "gold_sources": [
+        "data-export-and-offboarding.md"
+      ],
+      "retrieved": [
+        "data-export-and-offboarding.md",
+        "billing-and-refunds.md",
+        "plans-and-entitlements.md",
+        "account-credits-and-goodwill.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.25,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-07",
+      "question": "How long do I have to request a data export?",
+      "intent": "retention",
+      "expect_conflict": false,
+      "gold_sources": [
+        "data-export-and-offboarding.md"
+      ],
+      "retrieved": [
+        "data-export-and-offboarding.md",
+        "troubleshooting-playbook.md",
+        "plans-and-entitlements.md",
+        "sla-and-escalation.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.25,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-08",
+      "question": "How many seats are included in the Scale plan?",
+      "intent": "entitlement",
+      "expect_conflict": false,
+      "gold_sources": [
+        "plans-and-entitlements.md"
+      ],
+      "retrieved": [
+        "plans-and-entitlements.md",
+        "sla-and-escalation.md",
+        "billing-and-refunds.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.3333,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-09",
+      "question": "How do I add more seats to my plan?",
+      "intent": "entitlement",
+      "expect_conflict": false,
+      "gold_sources": [
+        "plans-and-entitlements.md"
+      ],
+      "retrieved": [
+        "plans-and-entitlements.md",
+        "billing-and-refunds.md",
+        "sla-and-escalation.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.3333,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-10",
+      "question": "How long is the free trial?",
+      "intent": "entitlement",
+      "expect_conflict": false,
+      "gold_sources": [
+        "plans-and-entitlements.md"
+      ],
+      "retrieved": [
+        "plans-and-entitlements.md",
+        "billing-and-refunds.md",
+        "data-export-and-offboarding.md",
+        "account-credits-and-goodwill.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.25,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-11",
+      "question": "What usage limits apply to the Starter plan?",
+      "intent": "entitlement",
+      "expect_conflict": false,
+      "gold_sources": [
+        "plans-and-entitlements.md"
+      ],
+      "retrieved": [
+        "plans-and-entitlements.md",
+        "billing-and-refunds.md",
+        "sla-and-escalation.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.3333,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-12",
+      "question": "What counts as a Sev-1 incident?",
+      "intent": "sla",
+      "expect_conflict": false,
+      "gold_sources": [
+        "sla-and-escalation.md"
+      ],
+      "retrieved": [
+        "sla-and-escalation.md",
+        "account-credits-and-goodwill.md",
+        "billing-and-refunds.md",
+        "data-export-and-offboarding.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.25,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-13",
+      "question": "When does the response clock stop during an incident?",
+      "intent": "sla",
+      "expect_conflict": false,
+      "gold_sources": [
+        "sla-and-escalation.md"
+      ],
+      "retrieved": [
+        "sla-and-escalation.md",
+        "billing-and-refunds.md",
+        "troubleshooting-playbook.md",
+        "data-export-and-offboarding.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.25,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-14",
+      "question": "How do I report a security incident?",
+      "intent": "sla",
+      "expect_conflict": false,
+      "gold_sources": [
+        "sla-and-escalation.md"
+      ],
+      "retrieved": [
+        "sla-and-escalation.md",
+        "account-credits-and-goodwill.md",
+        "troubleshooting-playbook.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.3333,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-15",
+      "question": "My customers cannot log in after a password reset. What do I try?",
+      "intent": "troubleshooting",
+      "expect_conflict": false,
+      "gold_sources": [
+        "troubleshooting-playbook.md"
+      ],
+      "retrieved": [
+        "troubleshooting-playbook.md",
+        "sla-and-escalation.md",
+        "billing-and-refunds.md",
+        "account-credits-and-goodwill.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.25,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-16",
+      "question": "My webhooks stopped delivering. What is the fix?",
+      "intent": "troubleshooting",
+      "expect_conflict": false,
+      "gold_sources": [
+        "troubleshooting-playbook.md"
+      ],
+      "retrieved": [
+        "troubleshooting-playbook.md",
+        "sla-and-escalation.md",
+        "plans-and-entitlements.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.3333,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-17",
+      "question": "Dashboards are loading very slowly. What should I check?",
+      "intent": "troubleshooting",
+      "expect_conflict": false,
+      "gold_sources": [
+        "troubleshooting-playbook.md"
+      ],
+      "retrieved": [
+        "troubleshooting-playbook.md",
+        "sla-and-escalation.md",
+        "plans-and-entitlements.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.3333,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-18",
+      "question": "I see duplicate records after a data sync. How do I clean up?",
+      "intent": "troubleshooting",
+      "expect_conflict": false,
+      "gold_sources": [
+        "troubleshooting-playbook.md"
+      ],
+      "retrieved": [
+        "troubleshooting-playbook.md",
+        "data-export-and-offboarding.md",
+        "account-credits-and-goodwill.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.3333,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-19",
+      "question": "When should I stop troubleshooting and escalate instead?",
+      "intent": "handoff",
+      "expect_conflict": false,
+      "gold_sources": [
+        "troubleshooting-playbook.md",
+        "sla-and-escalation.md"
+      ],
+      "retrieved": [
+        "troubleshooting-playbook.md",
+        "sla-and-escalation.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 1.0,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-20",
+      "question": "Are partial refunds allowed on any plan?",
+      "intent": "policy_lookup",
+      "expect_conflict": false,
+      "gold_sources": [
+        "billing-and-refunds.md"
+      ],
+      "retrieved": [
+        "billing-and-refunds.md",
+        "account-credits-and-goodwill.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.5,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-21",
+      "question": "What is a credit note and when do I get one?",
+      "intent": "definition",
+      "expect_conflict": false,
+      "gold_sources": [
+        "billing-and-refunds.md"
+      ],
+      "retrieved": [
+        "account-credits-and-goodwill.md",
+        "billing-and-refunds.md"
+      ],
+      "hit_rank": 2,
+      "precision_at_k": 0.5,
+      "recall": 1.0,
+      "reciprocal_rank": 0.5,
+      "ndcg": 0.5,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "qid": "kb-22",
+      "question": "Which items can never be refunded?",
+      "intent": "policy_lookup",
+      "expect_conflict": false,
+      "gold_sources": [
+        "billing-and-refunds.md"
+      ],
+      "retrieved": [
+        "billing-and-refunds.md",
+        "account-credits-and-goodwill.md"
+      ],
+      "hit_rank": 1,
+      "precision_at_k": 0.5,
+      "recall": 1.0,
+      "reciprocal_rank": 1.0,
+      "ndcg": 1.0,
+      "token_found": true,
+      "passed": true,
+      "note": ""
+    }
+  ]
+}
